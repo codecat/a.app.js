@@ -1,7 +1,44 @@
-function _make_global_func(obj, code)
+function _app_global_func(obj, code)
 {
 	var keys = Array.concat(Object.keys(obj), code);
 	return Function.apply(obj, keys);
+}
+
+function _app_make_subs(thisobj, text, callback)
+{
+	var ret = [];
+
+	while (true) {
+		var indexLeft = -1;
+
+		indexLeft = text.indexOf("{{");
+		if (indexLeft == -1) {
+			if (ret.length > 0) {
+				var nodesub = new NodeSub(thisobj);
+				nodesub.textLeft = text;
+				ret.push(nodesub);
+			}
+			break;
+		}
+
+		var textLeft = text.substr(0, indexLeft);
+		text = text.substr(indexLeft + 2);
+
+		var indexRight = text.indexOf("}}");
+		if (indexRight == -1) {
+			console.error("Couldn't find ending '}}'!");
+			break;
+		}
+
+		var nodesub = new NodeSub(thisobj);
+		nodesub.func = _app_global_func(thisobj.app.data, "return " + text.substr(0, indexRight));
+		nodesub.textLeft = textLeft;
+		ret.push(nodesub);
+
+		text = text.substr(indexRight + 2);
+	}
+
+	return ret;
 }
 
 class NodeSub
@@ -32,10 +69,41 @@ class AppNode
 		this.node = node;
 
 		this.subs_attrs = {};
+
+		if (node.attributes !== undefined) {
+			for (var i = 0; i < node.attributes.length; i++) {
+				let attr = node.attributes[i];
+
+				var subs = _app_make_subs(this, attr.value);
+
+				if (subs.length > 0) {
+					this.subs_attrs[attr.name] = subs;
+				}
+			}
+		}
 	}
 
 	render()
 	{
+		var attrs = Object.keys(this.subs_attrs);
+		if (attrs.length == 0) {
+			return;
+		}
+
+		for (var i = 0; i < attrs.length; i++) {
+			var key = attrs[i];
+			var attr = this.subs_attrs[key];
+			this.node.attributes[key].value = this.build_subs_text(attr);
+		}
+	}
+
+	build_subs_text(arr)
+	{
+		var ret = "";
+		for (var i = 0; i < arr.length; i++) {
+			ret += arr[i].build_text(this.app.data);
+		}
+		return ret;
 	}
 }
 
@@ -45,53 +113,16 @@ class TextAppNode extends AppNode
 	{
 		super(app, node);
 
-		this.subs_text = [];
-
-		var text = node.textContent;
-		var indexLeft = -1;
-
-		while (true) {
-			indexLeft = text.indexOf("{{");
-			if (indexLeft == -1) {
-				if (this.subs_text.length > 0) {
-					var nodesub = new NodeSub(this);
-					nodesub.textLeft = text;
-					this.subs_text.push(nodesub);
-				}
-				break;
-			}
-
-			var textLeft = text.substr(0, indexLeft);
-			text = text.substr(indexLeft + 2);
-
-			var indexRight = text.indexOf("}}");
-			if (indexRight == -1) {
-				console.error("Couldn't find ending '}}'!");
-				break;
-			}
-
-			var code = text.substr(0, indexRight);
-
-			var nodesub = new NodeSub(this);
-			nodesub.func = _make_global_func(this.app.data, "return " + code);
-			nodesub.textLeft = textLeft;
-			this.subs_text.push(nodesub);
-
-			text = text.substr(indexRight + 2);
-		}
+		this.subs_text = _app_make_subs(this, node.textContent);
 	}
 
 	render()
 	{
-		if (this.subs_text.length == 0) {
-			return;
-		}
+		super.render();
 
-		var text = "";
-		for (var i = 0; i < this.subs_text.length; i++) {
-			text += this.subs_text[i].build_text(this.app.data);
+		if (this.subs_text.length > 0) {
+			this.node.textContent = this.build_subs_text(this.subs_text);
 		}
-		this.node.textContent = text;
 	}
 }
 
@@ -109,8 +140,14 @@ class App
 
 	_initialize_node(node)
 	{
+		if (node.nodeName == "SCRIPT") {
+			return;
+		}
+
 		if (node.nodeType == Node.TEXT_NODE) {
 			node._app = new TextAppNode(this, node);
+		} else {
+			node._app = new AppNode(this, node);
 		}
 
 		if (node._app !== undefined) {

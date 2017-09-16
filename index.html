@@ -18,7 +18,7 @@
 	<body>
 		<h1>Hello</h1>
 		<p>My name is {{ first_name + " " + last_name }}!</p>
-		<p>I am {{ person.age }} years old and my hobby is {{ person.hobby }}.</p>
+		<p style="background: {{ bg_color }};">I am {{ person.age }} years old and my hobby is {{ person.hobby }}.</p>
 
 		<script>
 			class TestApp extends App
@@ -28,7 +28,7 @@
 					super({
 						first_name: "Nobody",
 						last_name: "Person",
-						bg_color: "#666",
+						bg_color: "#410",
 						person: {
 							age: 12,
 							hobby: "nothing"
