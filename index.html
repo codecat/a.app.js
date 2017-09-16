@@ -42,6 +42,20 @@
 			app.data.first_name = "Code";
 			app.data.person.hobby = "programming";
 			app.data.person.age = 24;
+
+			setInterval(function() {
+				app.data.person.age++;
+
+				if (app.data.bg_color == "#410") {
+					app.data.bg_color = "#014";
+				} else {
+					app.data.bg_color = "#410";
+				}
+
+				if (app.data.person.age > 70) {
+					app.data.person.hobby = "probably not programming anymore";
+				}
+			}, 1000);
 		</script>
 	</body>
 </html>
