@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>a.app.js example</title>
+
+		<meta charset="UTF-8">
+
+		<style>
+			body {
+				background: #000;
+				color: #aaa;
+			}
+		</style>
+
+		<script src="a.app.js"></script>
+	</head>
+
+	<body>
+		<h1>Hello</h1>
+		<p>My name is {{ first_name + " " + last_name }}!</p>
+		<p>I am {{ person.age }} years old and my hobby is {{ person.hobby }}.</p>
+
+		<script>
+			class TestApp extends App
+			{
+				constructor()
+				{
+					super({
+						first_name: "Nobody",
+						last_name: "Person",
+						bg_color: "#666",
+						person: {
+							age: 12,
+							hobby: "nothing"
+						}
+					});
+				}
+			}
+
+			var app = new TestApp();
+			app.data.last_name = "Cat";
+			app.data.first_name = "Code";
+			app.data.person.hobby = "programming";
+			app.data.person.age = 24;
+		</script>
+	</body>
+</html>
